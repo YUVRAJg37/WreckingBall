@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BallPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Pawn.h"
@@ -34,6 +35,8 @@ public:
 	USpringArmComponent* CameraBoom;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body")
 	UCameraComponent* Camera;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gun")
+	USkeletalMeshComponent* GunMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float MoveForce;
@@ -41,6 +44,7 @@ public:
 protected:
 
 	void Move(const FInputActionValue& Value);
+	void Look();
 
 private:
 
@@ -49,5 +53,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 		
-
+	UPROPERTY()
+	ABallPlayerController* BallPlayerController;
 };
