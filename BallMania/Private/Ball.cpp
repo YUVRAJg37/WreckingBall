@@ -1,7 +1,7 @@
 #include "Ball.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 ABall::ABall() :
 MoveForce(100.0f)
@@ -12,13 +12,11 @@ MoveForce(100.0f)
 	BallMesh = CreateDefaultSubobject<USkeletalMeshComponent>("Ball Mesh");
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>("Camera Boom");
 	Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
-	GunMesh = CreateDefaultSubobject<USkeletalMeshComponent>("Gun Mesh");
 
-	BallCollision->SetupAttachment(GetRootComponent());
+	SetRootComponent(BallCollision);
 	BallMesh->SetupAttachment(BallCollision);
 	CameraBoom->SetupAttachment(BallCollision);
 	Camera->SetupAttachment(CameraBoom);
-	GunMesh->SetupAttachment(BallCollision);
 
 	CameraBoom->TargetArmLength = 600.0f;
 	CameraBoom->bDoCollisionTest = false;
@@ -38,16 +36,13 @@ void ABall::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-
-	BallPlayerController = Cast<ABallPlayerController>(Controller);
+	
+	EquipGun(SpawnDefaultGun());
 }
 
 void ABall::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if(BallPlayerController)
-		Look();
 
 }
 
@@ -70,14 +65,29 @@ void ABall::Move(const FInputActionValue& Value)
 	}
 }
 
-void ABall::Look()
+AGun* ABall::SpawnDefaultGun()
 {
-	FHitResult HitResult;
-	BallPlayerController->GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
-	if(HitResult.bBlockingHit)
+	if(DefaultGunClass)
 	{
-		const FRotator GunLookAtRotation = UKismetMathLibrary::FindLookAtRotation(GunMesh->GetComponentLocation(), HitResult.ImpactPoint);
-		const FRotator NewRotation = FRotator(GunMesh->GetComponentRotation().Pitch, GunLookAtRotation.Yaw, GunMesh->GetComponentRotation().Roll);
-		GunMesh->SetWorldRotation(NewRotation);
+		return GetWorld()->SpawnActor<AGun>(DefaultGunClass);
 	}
+
+	return nullptr;
 }
+
+void ABall::EquipGun(AGun* GunToEquip)
+{
+	if(!GunToEquip)
+		return;
+
+	FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::KeepRelative, false);
+	AttachmentTransformRules.LocationRule = EAttachmentRule::KeepWorld;
+	AttachmentTransformRules.RotationRule = EAttachmentRule::KeepRelative;
+	AttachmentTransformRules.ScaleRule = EAttachmentRule::SnapToTarget;
+	GunToEquip->GetRoot()->AttachToComponent(BallCollision, FAttachmentTransformRules::KeepRelativeTransform, NAME_None);
+}
+	
+
+
+
+
